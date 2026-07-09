@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 
@@ -36,51 +37,17 @@ except ImportError:  # cartopy not installed in this environment
 
 STYLE_DIR = Path(__file__).parent / "mplstyle"
 
-# Theme: mplstyle file + base font/line/marker sizes (at the theme's reference figsize).
+# Assumed LaTeX \linewidth in inches (used to convert the width fraction to inches).
+_LINEWIDTH_IN = 15.0
+
+# Theme: mplstyle file. Base sizes are read from the mplstyle via rcParams after plt.style.use().
 THEMES: dict[str, dict] = {
     "paper": {
         "mplstyle": STYLE_DIR / "paper.mplstyle",
-        "sizes": {
-            "title": 21.0,
-            "label": 18.0,
-            "tick": 15.0,
-            "legend": 15.0,
-            "line": 2.0,
-            "marker": 8.0,
-        },
-        "scale_correction": 1.0,
     },
     "presentation": {
         "mplstyle": STYLE_DIR / "presentation.mplstyle",
-        "sizes": {
-            "title": 18.0,
-            "label": 15.0,
-            "tick": 13.0,
-            "legend": 13.0,
-            "line": 3.0,
-            "marker": 8.0,
-        },
-        "scale_correction": 0.92,
     },
-    "presentation_black": {
-        "mplstyle": STYLE_DIR / "presentation_black.mplstyle",
-        "sizes": {
-            "title": 18.0,
-            "label": 15.0,
-            "tick": 13.0,
-            "legend": 13.0,
-            "line": 3.0,
-            "marker": 8.0,
-        },
-        "scale_correction": 0.92,
-    },
-}
-
-# Width: reference figsize that the theme's base sizes were tuned for.
-# Width: reference figsize that the theme's base sizes were tuned for.
-WIDTHS: dict[str, tuple[float, float]] = {
-    "full": (15.0, 8.0),
-    "half": (7.5, 8.0),
 }
 
 # Background option: "transparent", "white", "black", or None (leave style's default).
@@ -94,10 +61,9 @@ BACKGROUNDS = {
 @dataclass
 class _ActiveStyle:
     theme: str
-    width: str
+    width: float
     base_figsize: tuple[float, float]
     sizes: dict[str, float]
-    scale_correction: float
     background: str | None
 
 
@@ -105,22 +71,23 @@ _active: _ActiveStyle | None = None
 
 
 def use_style(
-    theme: str = "paper", width: str = "full", background: str | None = None
+    theme: str = "paper", width: float = 1.0, background: str | None = None
 ) -> None:
     """Activate a theme/width/background combination. Call once, e.g. at the top of a notebook.
 
     Parameters
     ----------
-    theme : "paper", "presentation", or "presentation_black"
-    width : "full" or "half" -- the reference LaTeX slot this figure is tuned for
+    theme : "paper" or "presentation"
+    width : fraction of \\linewidth the figure will occupy in the document (0.01–1.0).
+            1.0 = full width, 0.5 = half width.
     background : "transparent", "white", "black", or None to leave the mplstyle's default
     """
     global _active
 
     if theme not in THEMES:
         raise ValueError(f"Unknown theme {theme!r}; choose from {sorted(THEMES)}")
-    if width not in WIDTHS:
-        raise ValueError(f"Unknown width {width!r}; choose from {sorted(WIDTHS)}")
+    if not (0.01 <= width <= 1.0):
+        raise ValueError(f"width must be between 0.01 and 1.0, got {width!r}")
     if background is not None and background not in BACKGROUNDS:
         raise ValueError(
             f"Unknown background {background!r}; choose from {sorted(BACKGROUNDS)} or None"
@@ -129,14 +96,89 @@ def use_style(
     cfg = THEMES[theme]
     plt.style.use(cfg["mplstyle"])
 
+    if background == "black":
+        plt.rcParams.update(
+            {
+                "figure.facecolor": "black",
+                "axes.facecolor": "black",
+                "savefig.facecolor": "black",
+                "savefig.edgecolor": "black",
+                "text.color": "white",
+                "axes.labelcolor": "white",
+                "xtick.color": "white",
+                "ytick.color": "white",
+                "axes.edgecolor": ".3",
+            }
+        )
+    elif background == "white":
+        plt.rcParams.update(
+            {
+                "figure.facecolor": "white",
+                "axes.facecolor": "white",
+                "savefig.facecolor": "white",
+            }
+        )
+    elif background == "transparent":
+        plt.rcParams.update(
+            {
+                "figure.facecolor": "none",
+                "savefig.facecolor": "none",
+            }
+        )
+
+    sizes = {
+        "title": float(plt.rcParams["axes.titlesize"]),
+        "label": float(plt.rcParams["axes.labelsize"]),
+        "tick": float(plt.rcParams["xtick.labelsize"]),
+        "legend": float(plt.rcParams["legend.fontsize"]),
+        "line": float(plt.rcParams["lines.linewidth"]),
+        "marker": float(plt.rcParams["lines.markersize"]),
+    }
+
     _active = _ActiveStyle(
         theme=theme,
         width=width,
-        base_figsize=WIDTHS[width],
-        sizes=cfg["sizes"],
-        scale_correction=cfg["scale_correction"],
+        base_figsize=(_LINEWIDTH_IN * width, 8.0),
+        sizes=sizes,
         background=background,
     )
+
+
+def create_figure(
+    figsize: tuple[float, float],
+    nrows: int = 1,
+    ncols: int = 1,
+    **subplots_kwargs: Any,
+) -> tuple[plt.Figure, Any]:
+    """Create a figure with scaled font/line sizes already set in rcParams.
+
+    Sizes are scaled for `figsize` relative to the active style's reference width,
+    so all artists created during plotting automatically use the correct sizes.
+    Manual overrides (e.g. ax.set_title(..., fontsize=20)) are fully preserved.
+
+    Parameters
+    ----------
+    figsize : (width, height) in inches
+    nrows, ncols : passed to plt.subplots
+    **subplots_kwargs : additional kwargs forwarded to plt.subplots
+    """
+    style = _require_active()
+    base_w, _ = style.base_figsize
+    scale = figsize[0] / base_w
+
+    plt.rcParams.update(
+        {
+            "axes.titlesize": style.sizes["title"] * scale,
+            "axes.labelsize": style.sizes["label"] * scale,
+            "xtick.labelsize": style.sizes["tick"] * scale,
+            "ytick.labelsize": style.sizes["tick"] * scale,
+            "legend.fontsize": style.sizes["legend"] * scale,
+            "lines.linewidth": style.sizes["line"] * scale,
+            "lines.markersize": style.sizes["marker"] * scale,
+        }
+    )
+
+    return plt.subplots(nrows, ncols, figsize=figsize, **subplots_kwargs)
 
 
 def _require_active() -> _ActiveStyle:
@@ -151,9 +193,8 @@ def current_scale(fig: plt.Figure) -> float:
     """Scale factor for `fig` given its actual size vs. the active style's reference size."""
     style = _require_active()
     base_w, _ = style.base_figsize
-    width, _ = fig.get_size_inches()
-    scale = width / base_w
-    return scale * style.scale_correction
+    fig_w, _ = fig.get_size_inches()
+    return fig_w / base_w
 
 
 def scaled_sizes(fig: plt.Figure) -> dict[str, float]:
@@ -183,46 +224,105 @@ def set_background(fig: plt.Figure, background: str | None = None) -> None:
             f"Unknown background {choice!r}; choose from {sorted(BACKGROUNDS)} or None"
         )
 
-    color = BACKGROUNDS[choice]
-    fig.patch.set_facecolor(color)
-    fig.patch.set_alpha(0.0 if choice == "transparent" else 1.0)
+    bg_color = BACKGROUNDS[choice]
+    is_dark = choice == "black"
+    alpha = 0.0 if choice == "transparent" else 1.0
+
+    if is_dark:
+        text_color = "white"
+        label_color = "white"
+        tick_color = "white"
+        spine_color = ".3"
+    else:
+        text_color = plt.rcParams["text.color"]
+        label_color = plt.rcParams["axes.labelcolor"]
+        tick_color = plt.rcParams["xtick.color"]
+        spine_color = plt.rcParams["axes.edgecolor"]
+
+    fig.patch.set_facecolor(bg_color)
+    fig.patch.set_alpha(alpha)
     for ax in fig.axes:
-        ax.patch.set_facecolor(color)
-        ax.patch.set_alpha(0.0 if choice == "transparent" else 1.0)
-
-
-def scale_fonts(fig: plt.Figure, background: str | None = None) -> dict[str, float]:
-    """Apply scaled fontsizes to everything on `fig`: axes, legends, cartopy gridliners.
-
-    Also applies the active (or per-call override) background color.
-    Call this once per figure, after plotting, before saving/showing.
-    Returns the computed sizes dict in case you need it (e.g. for manual text).
-    """
-    sizes = scaled_sizes(fig)
-    set_background(fig, background=background)
-
-    for ax in fig.axes:
-        ax.tick_params(labelsize=sizes["tick"])
-        if ax.get_title():
-            ax.title.set_fontsize(sizes["title"])
-        ax.xaxis.label.set_fontsize(sizes["label"])
-        ax.yaxis.label.set_fontsize(sizes["label"])
-
+        ax.patch.set_facecolor(bg_color)
+        ax.patch.set_alpha(alpha)
+        ax.title.set_color(text_color)
+        ax.xaxis.label.set_color(label_color)
+        ax.yaxis.label.set_color(label_color)
+        ax.tick_params(colors=tick_color)
+        for spine in ax.spines.values():
+            spine.set_color(spine_color)
         legend = ax.get_legend()
         if legend is not None:
-            _style_legend(legend, sizes)
+            _color_legend(legend, text_color)
 
-        if Gridliner is not None:
+    for legend in getattr(fig, "legends", []):
+        _color_legend(legend, text_color)
+
+
+def scale_fonts(fig: plt.Figure, background: str | None = None) -> None:
+    """Apply background color and cartopy gridliner sizes to `fig`.
+
+    Font and line sizes are already set via rcParams when `create_figure()` is
+    called, so this function only handles things rcParams cannot cover:
+    background/foreground colors and cartopy gridliner label sizes.
+
+    Call this once per figure, after plotting, before saving/showing.
+    """
+    set_background(fig, background=background)
+
+    if Gridliner is not None:
+        sizes = scaled_sizes(fig)
+        for ax in fig.axes:
             for artist in getattr(ax, "_gridliners", []):
                 if isinstance(artist, Gridliner):
                     artist.xlabel_style = {"size": sizes["tick"]}
                     artist.ylabel_style = {"size": sizes["tick"]}
 
-    fig_legend = getattr(fig, "legends", [])
-    for legend in fig_legend:
-        _style_legend(legend, sizes)
 
-    return sizes
+def savefig(
+    fig: plt.Figure,
+    filename: str | Path,
+    background: str | None = None,
+    dpi: int | None = None,
+    bbox_inches: str = "tight",
+    **kwargs: Any,
+) -> Path:
+    """Apply background, scale cartopy gridliners, and save `fig`.
+
+    The output filename is auto-suffixed with the active theme, background,
+    and width fraction: ``{stem}_{theme}_{background}_{width}.png``.
+
+    Parameters
+    ----------
+    fig : figure to save
+    filename : base filename (extension and suffix are added automatically)
+    background : override the active style's background for this save
+    dpi : dots per inch (defaults to the mplstyle's savefig.dpi)
+    bbox_inches : passed to fig.savefig (default "tight")
+    **kwargs : additional kwargs forwarded to fig.savefig
+
+    Returns
+    -------
+    Path of the saved file.
+    """
+    style = _require_active()
+    scale_fonts(fig, background=background)
+
+    effective_bg = background if background is not None else style.background
+    bg_label = effective_bg if effective_bg is not None else "default"
+    width_label = f"{style.width:.2f}".replace(".", "p")
+
+    base = Path(filename).with_suffix("")
+    out_path = base.parent / f"{base.name}_{style.theme}_{bg_label}_{width_label}.png"
+
+    save_kwargs: dict[str, Any] = {"bbox_inches": bbox_inches}
+    if dpi is not None:
+        save_kwargs["dpi"] = dpi
+    if effective_bg == "transparent":
+        save_kwargs["transparent"] = True
+    save_kwargs.update(kwargs)
+
+    fig.savefig(out_path, **save_kwargs)
+    return out_path
 
 
 def _style_legend(legend, sizes: dict[str, float]) -> None:
@@ -230,3 +330,10 @@ def _style_legend(legend, sizes: dict[str, float]) -> None:
         text.set_fontsize(sizes["legend"])
     if legend.get_title() is not None:
         legend.get_title().set_fontsize(sizes["legend"])
+
+
+def _color_legend(legend, color: str) -> None:
+    for text in legend.get_texts():
+        text.set_color(color)
+    if legend.get_title() is not None:
+        legend.get_title().set_color(color)

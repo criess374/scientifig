@@ -15,7 +15,9 @@ dependencies = [
 [project.optional-dependencies]
 cartopy = ["cartopy"]
 dev = [
+  "pre-commit",
   "bumpver",
   "pytest",
+  "numpy",
   "pytest-cov",
 ]

@@ -26,6 +26,8 @@ ytick.major.size: 0.0
 ytick.minor.size: 0.0
 
 savefig.dpi    : 300
+# Base sizes at the reference figsize.
+# scale_fonts() scales these proportionally for the actual figure size.
 axes.titlesize : 18
 axes.labelsize : 15
 lines.linewidth : 3
@@ -33,5 +35,5 @@ lines.markersize : 8
 xtick.labelsize : 13
 ytick.labelsize : 13
 axes.labelpad   : 1.0
-legend.fontsize : 12
+legend.fontsize : 13
 axes.prop_cycle: cycler('color', ['4477AA', '66CCEE', '228833', 'CCBB44', 'EE6677', 'AA3377', 'BBBBBB'])
