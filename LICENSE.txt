@@ -1,6 +1,6 @@
 Copyright (c) 2026 Christoph Riess
 
-"Climate Strike" License Version 1.0 (Draft)
+"Climate Strike" License Version 1.0
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
