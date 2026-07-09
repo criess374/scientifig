@@ -1,0 +1,21 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "figstylepy"
+license = {file = 'LICENSE.txt'}
+authors = [{name = "Christoph Riess", email = "christoph.riess@empa.ch"}]
+dynamic = ["version", "description"]
+requires-python = ">=3.9"
+dependencies = [
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+cartopy = ["cartopy"]
+dev = [
+  "bumpver",
+  "pytest",
+  "pytest-cov",
+]
