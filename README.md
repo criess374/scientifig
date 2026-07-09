@@ -20,7 +20,6 @@ pip install .
 
 ```python
 import numpy as np
-import matplotlib.pyplot as plt
 import scientifig
 
 # Set theme and the fraction of \linewidth the figure will occupy (once per notebook)

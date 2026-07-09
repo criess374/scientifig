@@ -343,13 +343,6 @@ def savefig(
     return out_path
 
 
-def _style_legend(legend, sizes: dict[str, float]) -> None:
-    for text in legend.get_texts():
-        text.set_fontsize(sizes["legend"])
-    if legend.get_title() is not None:
-        legend.get_title().set_fontsize(sizes["legend"])
-
-
 def _color_legend(legend, color: str) -> None:
     for text in legend.get_texts():
         text.set_color(color)
