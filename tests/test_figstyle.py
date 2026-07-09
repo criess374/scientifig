@@ -22,5 +22,5 @@ def test_example_plot():
     assert ax.yaxis.label.get_fontsize() == sizes["label"]
     assert ax.get_legend().get_texts()[0].get_fontsize() == sizes["legend"]
 
-    scientifig.scale_fonts(fig)  # applies background / cartopy gridliners
+    scientifig._fix_gridliner(fig)  # applies background / cartopy gridliners
     plt.close(fig)

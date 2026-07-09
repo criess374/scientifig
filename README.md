@@ -35,8 +35,8 @@ scientifig.use_style("paper", width=0.5)
 fig, ax = scientifig.create_figure(figsize=(7.5, 6))
 ax.plot(np.linspace(0, 10, 100), np.sin(np.linspace(0, 10, 100)))
 
-# Apply background and gridliner sizes, then show/save
-scientifig.scale_fonts(fig)
+# Apply  gridliner sizes, then show/save with adjusted name
+scientifig.savefig(fig, "output")  # saves with auto-suffix; or just plt.show()
 plt.show()
 ```
 

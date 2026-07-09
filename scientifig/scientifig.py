@@ -8,18 +8,16 @@ Workflow
 
     fig, ax = scientifig.create_figure(figsize=(7.5, 6))
     ax.plot(...)
-    scientifig.scale_fonts(fig)                # once per figure, right before saving/showing
+    scientifig.savefig(fig, "output")          # saves with auto-suffix; or just plt.show()
 
-Why this works
+What this does
 --------------
 Each theme has a reference canvas width (``canvas_width_in``): the assumed physical
 width of the document column or slide area in inches. When you specify
 ``width=0.5``, the reference figsize is half that canvas width. If you then
 create a figure with a different ``figsize``, `create_figure` scales every
 font, line, and marker size proportionally so that elements appear at the
-same physical size regardless of the figure dimensions. `scale_fonts` then
-handles anything rcParams cannot cover: background/foreground colors and
-cartopy gridliner label sizes.
+same physical size regardless of the figure dimensions.
 
 Themes and backgrounds
 ----------------------
@@ -144,6 +142,7 @@ def use_style(
         plt.rcParams.update(
             {
                 "figure.facecolor": "none",
+                "axes.facecolor": "none",
                 "savefig.facecolor": "none",
             }
         )
@@ -282,7 +281,7 @@ def set_background(fig: plt.Figure, background: str | None = None) -> None:
         _color_legend(legend, text_color)
 
 
-def scale_fonts(fig: plt.Figure, background: str | None = None) -> None:
+def _fix_gridliner(fig: plt.Figure, background: str | None = None) -> None:
     """Apply background color and cartopy gridliner sizes to `fig`.
 
     Font and line sizes are already set via rcParams when `create_figure()` is
@@ -329,7 +328,7 @@ def savefig(
     Path of the saved file.
     """
     style = _require_active()
-    scale_fonts(fig, background=background)
+    _fix_gridliner(fig, background=background)
 
     effective_bg = background if background is not None else style.background
     bg_label = effective_bg if effective_bg is not None else "default"

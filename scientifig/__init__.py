@@ -3,7 +3,6 @@
 from .scientifig import (
     use_style,
     create_figure,
-    scale_fonts,
     savefig,
     scaled_sizes,
     current_scale,
@@ -17,7 +16,6 @@ __version__ = "0.1.0"
 __all__ = [
     "use_style",
     "create_figure",
-    "scale_fonts",
     "savefig",
     "scaled_sizes",
     "current_scale",
