@@ -1,14 +1,14 @@
-"""figstyle: consistent fontsizes across LaTeX full/half-width figures and slides.
+"""scientifig: consistent fontsizes across LaTeX full/half-width figures and slides.
 
 Workflow
 --------
-    import figstyle
+    import scientifig
 
-    figstyle.use_style("paper", width="half")   # once, e.g. at the top of a notebook
+    scientifig.use_style("paper", width="half")   # once, e.g. at the top of a notebook
 
     fig, ax = plt.subplots(figsize=(7.5, 6))
     ax.plot(...)
-    figstyle.scale_fonts(fig)                   # once per figure, right before saving/showing
+    scientifig.scale_fonts(fig)                   # once per figure, right before saving/showing
 
 Why this works
 ---------------
@@ -184,7 +184,7 @@ def create_figure(
 def _require_active() -> _ActiveStyle:
     if _active is None:
         raise RuntimeError(
-            "No style active. Call figstyle.use_style(theme, width) first."
+            "No style active. Call scientifig.use_style(theme, width) first."
         )
     return _active
 

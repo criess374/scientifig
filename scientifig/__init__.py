@@ -1,4 +1,4 @@
-"""figstylepy: consistent fontsizes across LaTeX full/half-width figures and slides."""
+"""scientifig: consistent fontsizes across LaTeX full/half-width figures and slides."""
 
 from .figstyle import (
     use_style,
