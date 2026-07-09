@@ -1,0 +1,38 @@
+axes.axisbelow: True
+axes.edgecolor: .8
+axes.facecolor: white
+axes.grid: True
+axes.labelcolor: .15
+axes.linewidth: 1.5
+figure.facecolor: white
+savefig.facecolor: white
+savefig.edgecolor: white
+grid.color: .8
+grid.linestyle: -
+image.cmap: Greys
+legend.frameon: True
+legend.numpoints: 1
+legend.scatterpoints: 1
+lines.solid_capstyle: round
+text.color: .15
+xtick.color: .15
+xtick.direction: out
+xtick.major.size: 0.0
+xtick.minor.size: 0.0
+ytick.color: .15
+ytick.direction: out
+ytick.major.size: 0.0
+ytick.minor.size: 0.0
+
+savefig.dpi    : 300
+# Base sizes at the reference figsize.
+# create_figure() scales these proportionally for the actual figure size.
+axes.titlesize : 32
+axes.labelsize : 28
+lines.linewidth : 4
+lines.markersize : 12
+legend.fontsize : 24
+xtick.labelsize : 24
+ytick.labelsize : 24
+axes.labelpad   : 2.0
+axes.prop_cycle: cycler('color', ['4477AA', '66CCEE', '228833', 'CCBB44', 'EE6677', 'AA3377', 'BBBBBB'])

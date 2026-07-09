@@ -22,6 +22,18 @@ size in rcParams accordingly, so all artists created during plotting
 automatically use the correct sizes. `scale_fonts` then handles anything
 rcParams cannot cover: background/foreground colors and cartopy gridliner
 label sizes.
+
+Themes and backgrounds
+----------------------
+The built-in themes are ``"paper"``, ``"presentation"``, and ``"poster"``; the built-in
+backgrounds are ``"white"``, ``"black"``, and ``"transparent"``.
+
+Custom themes can be registered before calling `use_style` by adding an
+entry to the `THEMES` dict pointing to any `.mplstyle` file::
+
+    from pathlib import Path
+    scientifig.THEMES["mytheme"] = {"mplstyle": Path("path/to/mytheme.mplstyle")}
+    scientifig.use_style("mytheme", width=1.0)
 """
 
 from __future__ import annotations
@@ -50,6 +62,9 @@ THEMES: dict[str, dict] = {
     },
     "presentation": {
         "mplstyle": STYLE_DIR / "presentation.mplstyle",
+    },
+    "poster": {
+        "mplstyle": STYLE_DIR / "poster.mplstyle",
     },
 }
 
@@ -80,7 +95,7 @@ def use_style(
 
     Parameters
     ----------
-    theme : "paper" or "presentation"
+    theme : "paper", "presentation", or "poster"
     width : fraction of \\linewidth the figure will occupy in the document (0.01–1.0).
             1.0 = full width, 0.5 = half width.
     background : "transparent", "white", "black", or None to leave the mplstyle's default
