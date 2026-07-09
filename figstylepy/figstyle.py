@@ -40,17 +40,38 @@ STYLE_DIR = Path(__file__).parent / "mplstyle"
 THEMES: dict[str, dict] = {
     "paper": {
         "mplstyle": STYLE_DIR / "paper.mplstyle",
-        "sizes": {"title": 21.0, "label": 18.0, "tick": 15.0, "legend": 15.0, "line": 2.0, "marker": 8.0},
+        "sizes": {
+            "title": 21.0,
+            "label": 18.0,
+            "tick": 15.0,
+            "legend": 15.0,
+            "line": 2.0,
+            "marker": 8.0,
+        },
         "scale_correction": 1.0,
     },
     "presentation": {
         "mplstyle": STYLE_DIR / "presentation.mplstyle",
-        "sizes": {"title": 18.0, "label": 15.0, "tick": 13.0, "legend": 13.0, "line": 3.0, "marker": 8.0},
+        "sizes": {
+            "title": 18.0,
+            "label": 15.0,
+            "tick": 13.0,
+            "legend": 13.0,
+            "line": 3.0,
+            "marker": 8.0,
+        },
         "scale_correction": 0.92,
     },
     "presentation_black": {
         "mplstyle": STYLE_DIR / "presentation_black.mplstyle",
-        "sizes": {"title": 18.0, "label": 15.0, "tick": 13.0, "legend": 13.0, "line": 3.0, "marker": 8.0},
+        "sizes": {
+            "title": 18.0,
+            "label": 15.0,
+            "tick": 13.0,
+            "legend": 13.0,
+            "line": 3.0,
+            "marker": 8.0,
+        },
         "scale_correction": 0.92,
     },
 }
@@ -69,6 +90,7 @@ BACKGROUNDS = {
     "black": "black",
 }
 
+
 @dataclass
 class _ActiveStyle:
     theme: str
@@ -82,7 +104,9 @@ class _ActiveStyle:
 _active: _ActiveStyle | None = None
 
 
-def use_style(theme: str = "paper", width: str = "full", background: str | None = None) -> None:
+def use_style(
+    theme: str = "paper", width: str = "full", background: str | None = None
+) -> None:
     """Activate a theme/width/background combination. Call once, e.g. at the top of a notebook.
 
     Parameters
@@ -98,7 +122,9 @@ def use_style(theme: str = "paper", width: str = "full", background: str | None 
     if width not in WIDTHS:
         raise ValueError(f"Unknown width {width!r}; choose from {sorted(WIDTHS)}")
     if background is not None and background not in BACKGROUNDS:
-        raise ValueError(f"Unknown background {background!r}; choose from {sorted(BACKGROUNDS)} or None")
+        raise ValueError(
+            f"Unknown background {background!r}; choose from {sorted(BACKGROUNDS)} or None"
+        )
 
     cfg = THEMES[theme]
     plt.style.use(cfg["mplstyle"])
@@ -115,7 +141,9 @@ def use_style(theme: str = "paper", width: str = "full", background: str | None 
 
 def _require_active() -> _ActiveStyle:
     if _active is None:
-        raise RuntimeError("No style active. Call figstyle.use_style(theme, width) first.")
+        raise RuntimeError(
+            "No style active. Call figstyle.use_style(theme, width) first."
+        )
     return _active
 
 
@@ -151,7 +179,9 @@ def set_background(fig: plt.Figure, background: str | None = None) -> None:
     if choice is None:
         return
     if choice not in BACKGROUNDS:
-        raise ValueError(f"Unknown background {choice!r}; choose from {sorted(BACKGROUNDS)} or None")
+        raise ValueError(
+            f"Unknown background {choice!r}; choose from {sorted(BACKGROUNDS)} or None"
+        )
 
     color = BACKGROUNDS[choice]
     fig.patch.set_facecolor(color)
