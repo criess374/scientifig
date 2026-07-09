@@ -29,6 +29,7 @@ savefig.dpi    : 300
 # create_figure() scales these proportionally for the actual figure size.
 axes.titlesize : 14
 axes.labelsize : 12
+font.size      : 12
 lines.linewidth : 2.5
 lines.markersize : 7
 legend.fontsize : 10

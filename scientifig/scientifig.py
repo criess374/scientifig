@@ -1,4 +1,4 @@
-"""scientifig: consistent fontsizes across LaTeX full/half-width figures and slides.
+"""scientifig: consistent font and line sizes across figures, slides, and posters.
 
 Workflow
 --------
@@ -12,16 +12,14 @@ Workflow
 
 Why this works
 --------------
-When a figure is placed in LaTeX as \\includegraphics[width=\\linewidth]{...} or
-[width=0.5\\linewidth]{...}, it gets rescaled to fit that slot. A figure saved
-with a *larger* figsize (at the same DPI) ends up scaled down more by LaTeX,
-so its fonts must be drawn *larger* in matplotlib to look the same size on
-the page. `create_figure` compares the requested `figsize` against the
-reference figsize for the active style and scales every font/line/marker
-size in rcParams accordingly, so all artists created during plotting
-automatically use the correct sizes. `scale_fonts` then handles anything
-rcParams cannot cover: background/foreground colors and cartopy gridliner
-label sizes.
+Each theme has a reference canvas width (``canvas_width_in``): the assumed physical
+width of the document column or slide area in inches. When you specify
+``width=0.5``, the reference figsize is half that canvas width. If you then
+create a figure with a different ``figsize``, `create_figure` scales every
+font, line, and marker size proportionally so that elements appear at the
+same physical size regardless of the figure dimensions. `scale_fonts` then
+handles anything rcParams cannot cover: background/foreground colors and
+cartopy gridliner label sizes.
 
 Themes and backgrounds
 ----------------------
@@ -32,7 +30,7 @@ Custom themes can be registered before calling `use_style` by adding an
 entry to the `THEMES` dict pointing to any `.mplstyle` file::
 
     from pathlib import Path
-    scientifig.THEMES["mytheme"] = {"mplstyle": Path("path/to/mytheme.mplstyle")}
+    scientifig.THEMES["mytheme"] = {"mplstyle": Path("path/to/mytheme.mplstyle"), "canvas_width_in": 6.0}
     scientifig.use_style("mytheme", width=1.0)
 """
 
@@ -52,24 +50,25 @@ except ImportError:  # cartopy not installed in this environment
 
 STYLE_DIR = Path(__file__).parent / "mplstyle"
 
-# Fallback LaTeX \linewidth in inches for custom themes without an explicit linewidth_in.
+# Fallback canvas width in inches for custom themes without an explicit canvas_width_in.
 _LINEWIDTH_IN = 6.0
 
-# Theme: mplstyle file and reference \linewidth in inches.
-# linewidth_in is the assumed LaTeX \linewidth for the theme (used to convert the
-# width fraction to the reference figsize in inches).
+# Theme: mplstyle file and reference canvas width in inches.
+# canvas_width_in is the assumed physical width of the document column, slide area,
+# or poster column for the theme (used to convert the width fraction to the
+# reference figsize in inches).
 THEMES: dict[str, dict] = {
     "paper": {
         "mplstyle": STYLE_DIR / "paper.mplstyle",
-        "linewidth_in": 6.0,  # typical single/two-column journal text width
+        "canvas_width_in": 6.0,  # typical single/two-column journal text width
     },
     "presentation": {
         "mplstyle": STYLE_DIR / "presentation.mplstyle",
-        "linewidth_in": 8.0,  # typical slide content width
+        "canvas_width_in": 8.0,  # typical slide content width
     },
     "poster": {
         "mplstyle": STYLE_DIR / "poster.mplstyle",
-        "linewidth_in": 10.0,  # typical poster column width
+        "canvas_width_in": 10.0,  # typical poster column width
     },
 }
 
@@ -154,6 +153,7 @@ def use_style(
         "label": float(plt.rcParams["axes.labelsize"]),
         "tick": float(plt.rcParams["xtick.labelsize"]),
         "legend": float(plt.rcParams["legend.fontsize"]),
+        "text": float(plt.rcParams["font.size"]),
         "line": float(plt.rcParams["lines.linewidth"]),
         "marker": float(plt.rcParams["lines.markersize"]),
     }
@@ -161,7 +161,7 @@ def use_style(
     _active = _ActiveStyle(
         theme=theme,
         width=width,
-        base_figsize=(cfg.get("linewidth_in", _LINEWIDTH_IN) * width, 8.0),
+        base_figsize=(cfg.get("canvas_width_in", _LINEWIDTH_IN) * width, 8.0),
         sizes=sizes,
         background=background,
     )
@@ -196,6 +196,7 @@ def create_figure(
             "xtick.labelsize": style.sizes["tick"] * scale,
             "ytick.labelsize": style.sizes["tick"] * scale,
             "legend.fontsize": style.sizes["legend"] * scale,
+            "font.size": style.sizes["text"] * scale,
             "lines.linewidth": style.sizes["line"] * scale,
             "lines.markersize": style.sizes["marker"] * scale,
         }

@@ -1,8 +1,8 @@
 # scientifig
 
-Consistent font and line sizes across LaTeX full/half-width figures and slides.
+Consistent font and line sizes across figures, slides, and posters.
 
-When a figure is placed in LaTeX with `\includegraphics[width=\linewidth]{...}` or `[width=0.5\linewidth]{...}`, it is rescaled to fit the column. A figure saved at a larger `figsize` gets scaled down more, so its fonts need to be drawn proportionally larger in matplotlib to appear the same size on the page. `scientifig` handles this automatically.
+Each theme has a reference canvas width (the assumed physical width of the document column, slide area, or poster column). When you specify `width=0.5`, the reference figsize is half that canvas width. If you then create a figure at a different size, `scientifig` scales every font, line, and marker proportionally so that elements appear at the same physical size regardless of the figure dimensions.
 
 You can choose from the built-in themes (`"paper"`, `"presentation"`, `"poster"`), set a background color (`"white"`, `"black"`, `"transparent"`), and register your own themes by adding entries to `scientifig.THEMES` pointing to a custom `.mplstyle` file.
 
