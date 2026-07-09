@@ -1,6 +1,6 @@
 # scientifig
 
-Consistent font and line sizes across figures, slides, and posters.
+Consistent font and line sizes for figures across papers, presentations, and posters.
 
 Each theme has a reference canvas width (the assumed physical width of the document column, slide area, or poster column). When you specify `width=0.5`, the reference figsize is half that canvas width. If you then create a figure at a different size, `scientifig` scales every font, line, and marker proportionally so that elements appear at the same physical size regardless of the figure dimensions.
 
@@ -61,7 +61,7 @@ scientifig.use_style("mytheme", width=1.0)
 | Parameter | Description |
 |---|---|
 | `theme` | `"paper"`, `"presentation"`, or `"poster"` |
-| `width` | Fraction of `\linewidth` (e.g. `1.0` = full width, `0.5` = half width) |
+| `width` | Fraction of total width (e.g. `1.0` = full width, `0.5` = half width) |
 | `background` | `"white"`, `"black"`, `"transparent"`, or `None` |
 
 ## Optional dependency
