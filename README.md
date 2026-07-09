@@ -16,6 +16,12 @@ cd scientifig
 pip install .
 ```
 
+For development (includes pytest, pre-commit, etc.):
+
+```bash
+pip install -e ".[dev]"
+```
+
 ## Usage
 
 ```python

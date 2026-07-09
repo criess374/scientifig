@@ -52,19 +52,24 @@ except ImportError:  # cartopy not installed in this environment
 
 STYLE_DIR = Path(__file__).parent / "mplstyle"
 
-# Assumed LaTeX \linewidth in inches (used to convert the width fraction to inches).
-_LINEWIDTH_IN = 15.0
+# Fallback LaTeX \linewidth in inches for custom themes without an explicit linewidth_in.
+_LINEWIDTH_IN = 6.0
 
-# Theme: mplstyle file. Base sizes are read from the mplstyle via rcParams after plt.style.use().
+# Theme: mplstyle file and reference \linewidth in inches.
+# linewidth_in is the assumed LaTeX \linewidth for the theme (used to convert the
+# width fraction to the reference figsize in inches).
 THEMES: dict[str, dict] = {
     "paper": {
         "mplstyle": STYLE_DIR / "paper.mplstyle",
+        "linewidth_in": 6.0,  # typical single/two-column journal text width
     },
     "presentation": {
         "mplstyle": STYLE_DIR / "presentation.mplstyle",
+        "linewidth_in": 8.0,  # typical slide content width
     },
     "poster": {
         "mplstyle": STYLE_DIR / "poster.mplstyle",
+        "linewidth_in": 10.0,  # typical poster column width
     },
 }
 
@@ -156,7 +161,7 @@ def use_style(
     _active = _ActiveStyle(
         theme=theme,
         width=width,
-        base_figsize=(_LINEWIDTH_IN * width, 8.0),
+        base_figsize=(cfg.get("linewidth_in", _LINEWIDTH_IN) * width, 8.0),
         sizes=sizes,
         background=background,
     )
