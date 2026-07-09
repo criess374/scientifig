@@ -4,21 +4,24 @@ Workflow
 --------
     import scientifig
 
-    scientifig.use_style("paper", width="half")   # once, e.g. at the top of a notebook
+    scientifig.use_style("paper", width=0.5)   # once, e.g. at the top of a notebook
 
-    fig, ax = plt.subplots(figsize=(7.5, 6))
+    fig, ax = scientifig.create_figure(figsize=(7.5, 6))
     ax.plot(...)
-    scientifig.scale_fonts(fig)                   # once per figure, right before saving/showing
+    scientifig.scale_fonts(fig)                # once per figure, right before saving/showing
 
 Why this works
----------------
+--------------
 When a figure is placed in LaTeX as \\includegraphics[width=\\linewidth]{...} or
 [width=0.5\\linewidth]{...}, it gets rescaled to fit that slot. A figure saved
 with a *larger* figsize (at the same DPI) ends up scaled down more by LaTeX,
 so its fonts must be drawn *larger* in matplotlib to look the same size on
-the page. `scale_fonts` compares the actual `fig.get_size_inches()` against
-the reference figsize for the active style and scales every font/line/marker
-accordingly, so you can freely change figsize without fonts drifting.
+the page. `create_figure` compares the requested `figsize` against the
+reference figsize for the active style and scales every font/line/marker
+size in rcParams accordingly, so all artists created during plotting
+automatically use the correct sizes. `scale_fonts` then handles anything
+rcParams cannot cover: background/foreground colors and cartopy gridliner
+label sizes.
 """
 
 from __future__ import annotations

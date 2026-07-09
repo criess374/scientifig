@@ -1,6 +1,6 @@
 """scientifig: consistent fontsizes across LaTeX full/half-width figures and slides."""
 
-from .figstyle import (
+from .scientifig import (
     use_style,
     create_figure,
     scale_fonts,
