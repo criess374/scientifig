@@ -167,7 +167,7 @@ def use_style(
 
 
 def create_figure(
-    figsize: tuple[float, float],
+    figsize: tuple[float, float] = (8.0, 5.0),
     nrows: int = 1,
     ncols: int = 1,
     **subplots_kwargs: Any,
