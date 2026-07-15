@@ -38,6 +38,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 try:
@@ -114,6 +115,7 @@ def use_style(
         )
 
     cfg = THEMES[theme]
+    plt.rcParams.update(mpl.rcParamsDefault)
     plt.style.use(cfg["mplstyle"])
 
     if background == "black":
@@ -166,8 +168,21 @@ def use_style(
     )
 
 
+def reset_style() -> None:
+    """Deactivate the active style and restore matplotlib's built-in defaults.
+
+    Resets rcParams so subsequently created figures use matplotlib's factory
+    defaults instead of the active theme. Figures created before this call
+    keep whatever colors/sizes were already baked into their artists (e.g. by
+    `set_background`) — only new figures are affected.
+    """
+    global _active
+    plt.rcParams.update(mpl.rcParamsDefault)
+    _active = None
+
+
 def create_figure(
-    figsize: tuple[float, float] = (8.0, 5.0),
+    figsize: tuple[float, float] | None = None,
     nrows: int = 1,
     ncols: int = 1,
     **subplots_kwargs: Any,
@@ -180,28 +195,33 @@ def create_figure(
 
     Parameters
     ----------
-    figsize : (width, height) in inches
+    figsize : (width, height) in inches; defaults to matplotlib's own default
+              figsize, so a plain `plt.subplots()` matches this by default too.
     nrows, ncols : passed to plt.subplots
     **subplots_kwargs : additional kwargs forwarded to plt.subplots
     """
     style = _require_active()
+    if figsize is None:
+        figsize = tuple(plt.rcParams["figure.figsize"])
     base_w, _ = style.base_figsize
     scale = figsize[0] / base_w
-
-    plt.rcParams.update(
-        {
-            "axes.titlesize": style.sizes["title"] * scale,
-            "axes.labelsize": style.sizes["label"] * scale,
-            "xtick.labelsize": style.sizes["tick"] * scale,
-            "ytick.labelsize": style.sizes["tick"] * scale,
-            "legend.fontsize": style.sizes["legend"] * scale,
-            "font.size": style.sizes["text"] * scale,
-            "lines.linewidth": style.sizes["line"] * scale,
-            "lines.markersize": style.sizes["marker"] * scale,
-        }
-    )
+    plt.rcParams.update(_scaled_rc(style, scale))
 
     return plt.subplots(nrows, ncols, figsize=figsize, **subplots_kwargs)
+
+
+def _scaled_rc(style: _ActiveStyle, scale: float) -> dict[str, float]:
+    """rcParams for `style`'s sizes scaled by `scale`, as used by `create_figure`."""
+    return {
+        "axes.titlesize": style.sizes["title"] * scale,
+        "axes.labelsize": style.sizes["label"] * scale,
+        "xtick.labelsize": style.sizes["tick"] * scale,
+        "ytick.labelsize": style.sizes["tick"] * scale,
+        "legend.fontsize": style.sizes["legend"] * scale,
+        "font.size": style.sizes["text"] * scale,
+        "lines.linewidth": style.sizes["line"] * scale,
+        "lines.markersize": style.sizes["marker"] * scale,
+    }
 
 
 def _require_active() -> _ActiveStyle:
@@ -225,6 +245,66 @@ def scaled_sizes(fig: plt.Figure) -> dict[str, float]:
     style = _require_active()
     scale = current_scale(fig)
     return {name: value * scale for name, value in style.sizes.items()}
+
+
+def apply_style(fig: plt.Figure, background: str | None = None) -> None:
+    """Retroactively apply the active style's fonts, line/marker sizes, and
+    background to an already-created `fig`, scaled for its actual figsize.
+
+    `create_figure` only works because it sets rcParams *before* the figure's
+    artists are created; changing rcParams (via `use_style`) after the fact has
+    no effect on artists that already exist. Use this for figures made with
+    `plt.subplots()` directly, or made under a style that's since changed.
+    Manual per-artist overrides (e.g. `ax.set_title(..., fontsize=20)`) made
+    after this call are still preserved, same as with `create_figure`.
+
+    Note: matplotlib's automatic tick locator reads `xtick.labelsize` /
+    `ytick.labelsize` from the live rcParams (not from anything baked into the
+    axes) to decide how many ticks fit, so this also updates those rcParams
+    globally -- same as `create_figure` does -- to get matching tick spacing.
+
+    A legend's internal layout (handle length, spacing, box size) is computed
+    once at `ax.legend()` time from the rcParams active then, with no supported
+    way to resize it afterward -- so an existing legend is torn down and
+    rebuilt from its current handles/labels/title/loc once the line styles and
+    rcParams below are correct. Legends customized beyond title/loc/frameon
+    (e.g. `ncols`, `bbox_to_anchor`) won't have those extras preserved.
+    """
+    style = _require_active()
+    scale = current_scale(fig)
+    plt.rcParams.update(_scaled_rc(style, scale))
+    sizes = scaled_sizes(fig)
+
+    for ax in fig.axes:
+        ax.title.set_fontsize(sizes["title"])
+        ax.xaxis.label.set_fontsize(sizes["label"])
+        ax.yaxis.label.set_fontsize(sizes["label"])
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontsize(sizes["tick"])
+        for line in ax.get_lines():
+            line.set_linewidth(sizes["line"])
+            line.set_markersize(sizes["marker"])
+            line.set_solid_capstyle(plt.rcParams["lines.solid_capstyle"])
+            line.set_dash_capstyle(plt.rcParams["lines.dash_capstyle"])
+            line.set_solid_joinstyle(plt.rcParams["lines.solid_joinstyle"])
+            line.set_dash_joinstyle(plt.rcParams["lines.dash_joinstyle"])
+
+        legend = ax.get_legend()
+        if legend is not None:
+            handles, labels = ax.get_legend_handles_labels()
+            title = legend.get_title().get_text() or None
+            loc = legend._loc
+            frameon = legend.get_frame_on()
+            legend.remove()
+            ax.legend(handles, labels, loc=loc, title=title, frameon=frameon)
+
+        ax.grid(
+            visible=plt.rcParams["axes.grid"],
+            color=plt.rcParams["grid.color"],
+            linestyle=plt.rcParams["grid.linestyle"],
+        )
+
+    _fix_gridliner(fig, background=background)
 
 
 def set_background(fig: plt.Figure, background: str | None = None) -> None:
@@ -262,10 +342,26 @@ def set_background(fig: plt.Figure, background: str | None = None) -> None:
         tick_color = plt.rcParams["xtick.color"]
         spine_color = plt.rcParams["axes.edgecolor"]
 
-    fig.patch.set_facecolor(bg_color)
+    _paint_colors(
+        fig, bg_color, bg_color, alpha, text_color, label_color, tick_color, spine_color
+    )
+
+
+def _paint_colors(
+    fig: plt.Figure,
+    fig_color: str,
+    ax_color: str,
+    alpha: float,
+    text_color: str,
+    label_color: str,
+    tick_color: str,
+    spine_color: str,
+) -> None:
+    """Stamp background/text/tick/spine colors directly onto `fig` and its axes."""
+    fig.patch.set_facecolor(fig_color)
     fig.patch.set_alpha(alpha)
     for ax in fig.axes:
-        ax.patch.set_facecolor(bg_color)
+        ax.patch.set_facecolor(ax_color)
         ax.patch.set_alpha(alpha)
         ax.title.set_color(text_color)
         ax.xaxis.label.set_color(label_color)
@@ -275,10 +371,10 @@ def set_background(fig: plt.Figure, background: str | None = None) -> None:
             spine.set_color(spine_color)
         legend = ax.get_legend()
         if legend is not None:
-            _color_legend(legend, text_color)
+            _color_legend(legend, text_color, ax_color, spine_color, alpha)
 
     for legend in getattr(fig, "legends", []):
-        _color_legend(legend, text_color)
+        _color_legend(legend, text_color, fig_color, spine_color, alpha)
 
 
 def _fix_gridliner(fig: plt.Figure, background: str | None = None) -> None:
@@ -348,8 +444,14 @@ def savefig(
     return out_path
 
 
-def _color_legend(legend, color: str) -> None:
+def _color_legend(
+    legend, text_color: str, frame_color: str, edge_color: str, alpha: float
+) -> None:
     for text in legend.get_texts():
-        text.set_color(color)
+        text.set_color(text_color)
     if legend.get_title() is not None:
-        legend.get_title().set_color(color)
+        legend.get_title().set_color(text_color)
+    frame = legend.get_frame()
+    frame.set_facecolor(frame_color)
+    frame.set_edgecolor(edge_color)
+    frame.set_alpha(alpha)
